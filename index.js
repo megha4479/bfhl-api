@@ -6,17 +6,12 @@ import axios from "axios";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// ======================
-// Middleware
-// ======================
+
 app.use(cors());
 app.use(express.json());
 
-// ======================
-// GET /health
-// ======================
+
 app.get("/health", (req, res) => {
   res.status(200).json({
     is_success: true,
@@ -24,9 +19,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// ======================
-// Helper Functions
-// ======================
+
 const fibonacciSeries = (n) => {
   const result = [0, 1];
   for (let i = 2; i < n; i++) {
@@ -49,22 +42,15 @@ const findHCF = (arr) => arr.reduce((a, b) => gcd(a, b));
 const lcm = (a, b) => (a * b) / gcd(a, b);
 const findLCM = (arr) => arr.reduce((a, b) => lcm(a, b));
 
-// ======================
-// Simple AI fallback
-// ======================
+
 const fallbackAI = (question) => {
   const q = question.toLowerCase();
-
   if (q.includes("capital") && q.includes("maharashtra")) return "Mumbai";
   if (q.includes("capital") && q.includes("india")) return "Delhi";
-  if (q.includes("prime minister")) return "Modi";
-
   return "Unknown";
 };
 
-// ======================
-// POST /bfhl
-// ======================
+
 app.post("/bfhl", async (req, res) => {
   try {
     const body = req.body;
@@ -79,41 +65,28 @@ app.post("/bfhl", async (req, res) => {
 
     if (key === "fibonacci") {
       data = fibonacciSeries(body.fibonacci);
-    } 
-    else if (key === "prime") {
+    } else if (key === "prime") {
       data = body.prime.filter(isPrime);
-    } 
-    else if (key === "hcf") {
+    } else if (key === "hcf") {
       data = findHCF(body.hcf);
-    } 
-    else if (key === "lcm") {
+    } else if (key === "lcm") {
       data = findLCM(body.lcm);
-    } 
-    else if (key === "AI") {
-
+    } else if (key === "AI") {
       try {
-        // TRY GEMINI FIRST
         const aiRes = await axios.post(
           `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
           {
-            contents: [
-              {
-                parts: [{ text: body.AI }]
-              }
-            ]
+            contents: [{ parts: [{ text: body.AI }] }]
           }
         );
 
         data = aiRes.data.candidates[0].content.parts[0].text
           .trim()
           .split(" ")[0];
-
-      } catch (aiError) {
-        // ✅ FALLBACK IF GEMINI FAILS
+      } catch {
         data = fallbackAI(body.AI);
       }
-    } 
-    else {
+    } else {
       return res.status(400).json({ is_success: false });
     }
 
@@ -122,15 +95,9 @@ app.post("/bfhl", async (req, res) => {
       official_email: "megha@chitkara.edu.in",
       data
     });
-
-  } catch (error) {
+  } catch {
     res.status(500).json({ is_success: false });
   }
 });
 
-// ======================
-// Start Server
-// ======================
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+export default app;
